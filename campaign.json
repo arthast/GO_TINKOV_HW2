@@ -1,0 +1,17 @@
+{
+  "movesLimit": 100,
+  "spawnRules": [
+    {"cashback": "1", "probability": "0.85"},
+    {"cashback": "2", "probability": "0.15"}
+  ],
+  "maxRewardCashback": "32",
+  "maxRewardAllowedRate": "0.20",
+  "rewards": [
+    {"cashback": "1", "tier": "basic"},
+    {"cashback": "2", "tier": "bronze"},
+    {"cashback": "4", "tier": "silver"},
+    {"cashback": "8", "tier": "gold"},
+    {"cashback": "16", "tier": "platinum"},
+    {"cashback": "32", "tier": "maximum"}
+  ]
+}
