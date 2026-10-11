@@ -1,0 +1,66 @@
+# Форматирование, линтинг, тесты, race detector, покрытие и сборка в GitLab CI.
+stages:
+  - lint
+  - test
+  - build
+
+variables:
+  GOTOOLCHAIN: local
+  GOFLAGS: -mod=readonly
+  GOMODCACHE: $CI_PROJECT_DIR/.cache/go-mod
+  GOCACHE: $CI_PROJECT_DIR/.cache/go-build
+  GOLANGCI_LINT_CACHE: $CI_PROJECT_DIR/.cache/golangci-lint
+
+default:
+  image: golang:1.26.6-trixie
+  interruptible: true
+  cache:
+    key:
+      files: [go.sum]
+    paths:
+      - .cache/go-mod/
+      - .cache/go-build/
+      - .cache/golangci-lint/
+
+lint:
+  stage: lint
+  image:
+    name: golangci/golangci-lint:v2.12.2-alpine
+    entrypoint: [""]
+  script:
+    - go mod tidy -diff
+    - golangci-lint config verify
+    - golangci-lint fmt --diff
+    - golangci-lint run
+
+test:
+  stage: test
+  script:
+    - >-
+      go run gotest.tools/gotestsum@v1.13.0
+      --junitfile report.xml
+      --
+      -race
+      -covermode=atomic
+      -coverprofile=coverage.out
+      ./...
+    - go tool cover -func=coverage.out
+    - >-
+      go run github.com/boumenot/gocover-cobertura@v1.5.0
+      -strict < coverage.out > coverage.xml
+  coverage: '/total:.*\(statements\).*\s+(\d+(?:\.\d+)?%)/'
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+build:
+  stage: build
+  variables:
+    CGO_ENABLED: "0"
+  script:
+    - go build -trimpath -o bin/cashback-merge ./cmd/cashback-merge
